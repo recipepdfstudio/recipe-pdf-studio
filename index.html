@@ -1,251 +1,34 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Recipe PDF Studio</title>
+  <meta charset="UTF-8">
+  <title>RecipePDFStudio</title>
 
+  <link rel="stylesheet" href="style.css">
+
+  <!-- PDF library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <style>
-    body {
-      font-family: Arial;
-      margin: 0;
-      background: #f6f7fb;
-      font-size: 17px;
-    }
-
-    .topbar {
-      background: #1f6f3b;
-      color: white;
-      padding: 15px;
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    .container {
-      display: flex;
-      gap: 20px;
-      padding: 20px;
-      flex-wrap: wrap;
-    }
-
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      width: 400px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    }
-
-    input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      font-size: 15px;
-    }
-
-    textarea {
-      height: 80px;
-    }
-
-    button {
-      padding: 10px;
-      margin-top: 8px;
-      width: 100%;
-      border: none;
-      cursor: pointer;
-      border-radius: 8px;
-    }
-
-    .save { background: #2f9e44; color: white; }
-    .pdf { background: #1976d2; color: white; }
-
-    .recipe {
-      border: 1px solid #eee;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 8px;
-    }
-
-    .title {
-      font-weight: bold;
-    }
-
-    .btns {
-      display: flex;
-      gap: 5px;
-      margin-top: 8px;
-    }
-
-    .btns button {
-      width: 50%;
-      font-size: 13px;
-    }
-
-    .edit { background: #1c7ed6; color: white; }
-    .delete { background: #e03131; color: white; }
-
-    .undo {
-      background: orange;
-      color: white;
-      margin-top: 10px;
-    }
-
-  </style>
 </head>
 
 <body>
 
-<div class="topbar">🍲 Recipe PDF Studio</div>
+  <div class="app">
+    <div class="card">
 
-<div class="container">
+      <h1>🍳 RecipePDFStudio</h1>
 
-  <!-- FORM -->
-  <div class="card">
-    <h3>Create / Edit Recipe</h3>
+      <input id="title" placeholder="Recipe Title" />
 
-    <input id="title" placeholder="Title">
-    <select id="category">
-      <option>Breakfast</option>
-      <option>Lunch</option>
-      <option>Dinner</option>
-      <option>Snack</option>
-    </select>
+      <textarea id="ingredients" placeholder="Ingredients (one per line)"></textarea>
 
-    <textarea id="ingredients" placeholder="Ingredients"></textarea>
-    <textarea id="steps" placeholder="Steps"></textarea>
+      <textarea id="instructions" placeholder="Instructions"></textarea>
 
-    <button class="save" onclick="saveRecipe()">Save Recipe</button>
-    <button class="pdf" onclick="generatePDF()">Generate PDF</button>
+      <button onclick="generatePDF()">Download PDF</button>
+
+    </div>
   </div>
 
-  <!-- LIST -->
-  <div class="card">
-    <h3>My Recipes</h3>
-
-    <input id="search" placeholder="Search..." oninput="renderRecipes()">
-
-    <div id="list"></div>
-
-    <button id="undoBtn" class="undo" onclick="undoDelete()" style="display:none;">
-      Undo Delete
-    </button>
-  </div>
-
-</div>
-
-<script>
-
-let recipes = JSON.parse(localStorage.getItem("recipes") || "[]");
-let editId = null;
-let lastDeleted = null;
-
-function saveData() {
-  localStorage.setItem("recipes", JSON.stringify(recipes));
-  renderRecipes();
-}
-
-function saveRecipe() {
-  const data = {
-    id: editId || Date.now(),
-    title: document.getElementById("title").value,
-    category: document.getElementById("category").value,
-    ingredients: document.getElementById("ingredients").value,
-    steps: document.getElementById("steps").value
-  };
-
-  if (!data.title) return alert("Add title");
-
-  if (editId) {
-    recipes = recipes.map(r => r.id === editId ? data : r);
-    editId = null;
-  } else {
-    recipes.push(data);
-  }
-
-  clearForm();
-  saveData();
-}
-
-function renderRecipes() {
-  const list = document.getElementById("list");
-  const search = document.getElementById("search").value.toLowerCase();
-
-  list.innerHTML = "";
-
-  recipes
-    .filter(r => r.title.toLowerCase().includes(search))
-    .forEach(r => {
-
-      const div = document.createElement("div");
-      div.className = "recipe";
-
-      div.innerHTML = `
-        <div class="title">${r.title}</div>
-        <div>${r.category}</div>
-
-        <div class="btns">
-          <button class="edit" onclick="editRecipe(${r.id})">Edit</button>
-          <button class="delete" onclick="deleteRecipe(${r.id})">Delete</button>
-        </div>
-      `;
-
-      list.appendChild(div);
-    });
-}
-
-function editRecipe(id) {
-  const r = recipes.find(r => r.id === id);
-
-  document.getElementById("title").value = r.title;
-  document.getElementById("category").value = r.category;
-  document.getElementById("ingredients").value = r.ingredients;
-  document.getElementById("steps").value = r.steps;
-
-  editId = id;
-}
-
-function deleteRecipe(id) {
-  lastDeleted = recipes.find(r => r.id === id);
-  recipes = recipes.filter(r => r.id !== id);
-
-  document.getElementById("undoBtn").style.display = "block";
-
-  saveData();
-}
-
-function undoDelete() {
-  if (lastDeleted) {
-    recipes.push(lastDeleted);
-    lastDeleted = null;
-    saveData();
-    document.getElementById("undoBtn").style.display = "none";
-  }
-}
-
-function clearForm() {
-  document.getElementById("title").value = "";
-  document.getElementById("ingredients").value = "";
-  document.getElementById("steps").value = "";
-}
-
-function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  const t = document.getElementById("title").value;
-  const ing = document.getElementById("ingredients").value;
-  const st = document.getElementById("steps").value;
-
-  doc.text("Recipe: " + t, 10, 10);
-  doc.text("Ingredients:\n" + ing, 10, 20);
-  doc.text("Steps:\n" + st, 10, 50);
-
-  doc.save(t + ".pdf");
-}
-
-renderRecipes();
-
-</script>
+  <script src="script.js"></script>
 
 </body>
 </html>
