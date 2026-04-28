@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Recipe PDF Studio</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f6f7fb;
+      font-size: 17px;
+      color: #1f1f1f;
+    }
+
+    .topbar {
+      background: #1f6f3b;
+      color: white;
+      padding: 16px 22px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 50px 20px 25px;
+      max-width: 750px;
+      margin: auto;
+    }
+
+    .hero h1 {
+      font-size: 38px;
+      margin-bottom: 8px;
+    }
+
+    .hero p.slogan {
+      font-size: 20px;
+      color: #2f9e44;
+      font-weight: 600;
+      margin: 10px 0 6px;
+    }
+
+    .hero p.desc {
+      font-size: 16px;
+      color: #666;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      flex-wrap: wrap;
+      padding: 20px 20px 60px;
+    }
+
+    .card {
+      background: white;
+      width: 420px;
+      padding: 26px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      font-size: 22px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+    }
+
+    textarea {
+      height: 95px;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #2f9e44;
+      color: white;
+    }
+
+    .secondary {
+      background: #1976d2;
+      color: white;
+    }
+
+    .recipe {
+      border: 1px solid #eee;
+      padding: 14px;
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+
+    .title {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .meta {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .actions button {
+      width: 50%;
+      font-size: 14px;
+    }
+
+    .delete {
+      background: #e03131;
+      color: white;
+    }
+
+    .edit {
+      background: #1c7ed6;
+      color: white;
+    }
+
+    .undo {
+      background: #ff9800;
+      color: white;
+      margin-top: 12px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="topbar">🍲 Recipe PDF Studio</div>
+
+<div class="hero">
+  <h1>Recipe PDF Studio</h1>
+
+  <p class="slogan">
+    A trusted cooking companion app
+  </p>
+
+  <p class="desc">
+    Save recipes, organize meals, and export beautiful printable PDFs instantly.
+  </p>
+</div>
+
+<div class="container">
+
+  <!-- CREATE -->
+  <div class="card">
+    <h2>Create Recipe</h2>
+
+    <input id="title" placeholder="Recipe title">
+
+    <select id="category">
+      <option>Breakfast</option>
+      <option>Lunch</option>
+      <option>Dinner</option>
+      <option>Snack</option>
+    </select>
+
+    <textarea id="ingredients" placeholder="Ingredients"></textarea>
+    <textarea id="steps" placeholder="Steps"></textarea>
+
+    <button class="primary" onclick="saveRecipe()">Save Recipe</button>
+    <button class="secondary" onclick="generatePDF()">Generate PDF</button>
+  </div>
+
+  <!-- LIBRARY -->
+  <div class="card">
+    <h2>My Recipes</h2>
+
+    <input id="search" placeholder="Search..." oninput="loadRecipes()">
+
+    <div id="list"></div>
+
+    <button id="undoBtn" class="undo" style="display:none;" onclick="undoDelete()">
+      Undo Delete
+    </button>
+  </div>
+
+</div>
+
+<script>
+
+let lastDeleted = null;
+
+function getRecipes() {
+  return JSON.parse(localStorage.getItem("recipes") || "[]");
+}
+
+function saveToStorage(data) {
+  localStorage.setItem("recipes", JSON.stringify(data));
+  loadRecipes();
+}
+
+function saveRecipe() {
+  const recipes = getRecipes();
+
+  const newRecipe = {
+    id: Date.now(),
+    title: document.getElementById("title").value,
+    category: document.getElementById("category").value,
+    ingredients: document.getElementById("ingredients").value,
+    steps: document.getElementById("steps").value
+  };
+
+  if (!newRecipe.title) return alert("Add a title");
+
+  recipes.push(newRecipe);
+  saveToStorage(recipes);
+
+  document.getElementById("title").value = "";
+  document.getElementById("ingredients").value = "";
+  document.getElementById("steps").value = "";
+}
+
+function loadRecipes() {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  const search = document.getElementById("search").value.toLowerCase();
+  const recipes = getRecipes();
+
+  recipes
+    .filter(r =>
+      r.title.toLowerCase().includes(search) ||
+      r.category.toLowerCase().includes(search)
+    )
+    .forEach(r => {
+
+      const div = document.createElement("div");
+      div.className = "recipe";
+
+      div.innerHTML = `
+        <div class="title">${r.title}</div>
+        <div class="meta">${r.category}</div>
+
+        <div class="actions">
+          <button class="edit" onclick="editRecipe(${r.id})">Edit</button>
+          <button class="delete" onclick="deleteRecipe(${r.id})">Delete</button>
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+}
+
+function deleteRecipe(id) {
+  const recipes = getRecipes();
+  const index = recipes.findIndex(r => r.id === id);
+
+  lastDeleted = recipes[index];
+
+  recipes.splice(index, 1);
+  saveToStorage(recipes);
+
+  document.getElementById("undoBtn").style.display = "block";
+}
+
+function undoDelete() {
+  if (!lastDeleted) return;
+
+  const recipes = getRecipes();
+  recipes.push(lastDeleted);
+
+  saveToStorage(recipes);
+
+  lastDeleted = null;
+  document.getElementById("undoBtn").style.display = "none";
+}
+
+function editRecipe(id) {
+  const recipes = getRecipes();
+  const r = recipes.find(r => r.id === id);
+
+  document.getElementById("title").value = r.title;
+  document.getElementById("category").value = r.category;
+  document.getElementById("ingredients").value = r.ingredients;
+  document.getElementById("steps").value = r.steps;
+
+  deleteRecipe(id);
+}
+
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const t = document.getElementById("title").value;
+  const c = document.getElementById("category").value;
+  const ing = document.getElementById("ingredients").value;
+  const st = document.getElementById("steps").value;
+
+  let y = 20;
+
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text(t || "Recipe", 10, y);
+  y += 12;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  doc.text("Category: " + c, 10, y);
+  y += 10;
+
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text("Ingredients", 10, y);
+  y += 8;
+
+  doc.setFontSize(12);
+  const ingLines = doc.splitTextToSize(ing || "-", 180);
+  doc.text(ingLines, 10, y);
+  y += ingLines.length * 6 + 5;
+
+  doc.setFontSize(14);
+  doc.text("Steps", 10, y);
+  y += 8;
+
+  doc.setFontSize(12);
+  const stepLines = doc.splitTextToSize(st || "-", 180);
+  doc.text(stepLines, 10, y);
+
+  doc.setFontSize(10);
+  doc.text("Generated by Recipe PDF Studio", 10, 280);
+
+  doc.save((t || "recipe") + ".pdf");
+}
+
+loadRecipes();
+
+</script>
+
+</body>
+</html>
