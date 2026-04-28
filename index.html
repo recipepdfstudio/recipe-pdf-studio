@@ -2,51 +2,130 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-
   <title>Recipe PDF Studio</title>
 
-  <!-- 📱 Mobile fix -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- PDF library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: Arial; margin: 0; background: #f4f4f4; }
+
+    .app { display: flex; justify-content: center; padding: 20px; }
+
+    .card {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    input, textarea {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+    }
+
+    textarea { min-height: 80px; }
+
+    button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      background: #ff7a18;
+      color: white;
+      border: none;
+    }
+
+    .recipe {
+      background: #eee;
+      margin-top: 10px;
+      padding: 10px;
+    }
+  </style>
 </head>
 
 <body>
 
   <div class="app">
-
     <div class="card">
 
       <h1>🍲 Recipe PDF Studio</h1>
 
-      <!-- FORM -->
       <input id="title" placeholder="Recipe title">
-
       <textarea id="ingredients" placeholder="Ingredients"></textarea>
-
       <textarea id="steps" placeholder="Steps"></textarea>
 
-      <button onclick="addRecipe()">Save Recipe</button>
+      <button onclick="addRecipe()">Add Recipe</button>
       <button onclick="generatePDF()">Download PDF</button>
 
       <hr>
 
-      <!-- SEARCH -->
       <h3>My Recipes</h3>
-
-      <input id="search" placeholder="Search recipes..." oninput="render()">
-
-      <!-- LIST -->
       <div id="list"></div>
 
     </div>
-
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    let recipes = JSON.parse(localStorage.getItem("recipes")) || [];
+
+    function save() {
+      localStorage.setItem("recipes", JSON.stringify(recipes));
+      render();
+    }
+
+    function addRecipe() {
+      recipes.push({
+        title: title.value,
+        ingredients: ingredients.value,
+        steps: steps.value
+      });
+
+      save();
+
+      title.value = "";
+      ingredients.value = "";
+      steps.value = "";
+    }
+
+    function render() {
+      const list = document.getElementById("list");
+      list.innerHTML = "";
+
+      recipes.forEach((r, i) => {
+        list.innerHTML += `
+          <div class="recipe">
+            <b>${r.title}</b><br>
+            <button onclick="deleteRecipe(${i})">Delete</button>
+          </div>
+        `;
+      });
+    }
+
+    function deleteRecipe(i) {
+      recipes.splice(i, 1);
+      save();
+    }
+
+    function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      let y = 10;
+
+      recipes.forEach((r, i) => {
+        doc.text(r.title, 10, y);
+        y += 10;
+      });
+
+      doc.save("recipes.pdf");
+    }
+
+    render();
+  </script>
 
 </body>
 </html>
