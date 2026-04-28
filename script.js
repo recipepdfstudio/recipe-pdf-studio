@@ -1,52 +1,85 @@
-function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+let recipes = [];
 
+function addRecipe() {
   const title = document.getElementById("title").value;
   const ingredients = document.getElementById("ingredients").value;
   const instructions = document.getElementById("instructions").value;
 
-  let y = 20;
+  if (!title || !ingredients || !instructions) {
+    alert("Please fill in all fields");
+    return;
+  }
 
-  // Title (centered)
+  recipes.push({ title, ingredients, instructions });
+
+  updateList();
+
+  // clear inputs
+  document.getElementById("title").value = "";
+  document.getElementById("ingredients").value = "";
+  document.getElementById("instructions").value = "";
+}
+
+function updateList() {
+  const list = document.getElementById("recipeList");
+  list.innerHTML = "";
+
+  recipes.forEach((r, index) => {
+    const li = document.createElement("li");
+    li.textContent = `${index + 1}. ${r.title}`;
+    list.appendChild(li);
+  });
+}
+
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  let y = 15;
+
   doc.setFont("Helvetica", "bold");
-  doc.setFontSize(20);
-  doc.text(title || "Untitled Recipe", 105, y, { align: "center" });
-
-  y += 15;
-
-  // Line separator
-  doc.setDrawColor(200);
-  doc.line(10, y, 200, y);
+  doc.setFontSize(18);
+  doc.text("My Recipe Cookbook", 105, y, { align: "center" });
 
   y += 10;
 
-  // Ingredients
-  doc.setFontSize(14);
-  doc.text("Ingredients", 10, y);
+  recipes.forEach((r, i) => {
+    y += 10;
 
-  y += 8;
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(`${i + 1}. ${r.title}`, 10, y);
 
-  doc.setFont("Helvetica", "normal");
-  doc.setFontSize(11);
+    y += 6;
 
-  const ingLines = doc.splitTextToSize(ingredients, 180);
-  doc.text(ingLines, 10, y);
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Ingredients:", 10, y);
 
-  y += ingLines.length * 6 + 10;
+    y += 5;
 
-  // Instructions
-  doc.setFont("Helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("Instructions", 10, y);
+    doc.setFont("Helvetica", "normal");
+    let ing = doc.splitTextToSize(r.ingredients, 180);
+    doc.text(ing, 10, y);
 
-  y += 8;
+    y += ing.length * 5 + 5;
 
-  doc.setFont("Helvetica", "normal");
-  doc.setFontSize(11);
+    doc.setFont("Helvetica", "bold");
+    doc.text("Instructions:", 10, y);
 
-  const instLines = doc.splitTextToSize(instructions, 180);
-  doc.text(instLines, 10, y);
+    y += 5;
 
-  doc.save((title || "recipe") + ".pdf");
+    doc.setFont("Helvetica", "normal");
+    let ins = doc.splitTextToSize(r.instructions, 180);
+    doc.text(ins, 10, y);
+
+    y += ins.length * 5 + 10;
+
+    if (y > 270 && i !== recipes.length - 1) {
+      doc.addPage();
+      y = 15;
+    }
+  });
+
+  doc.save("cookbook.pdf");
 }
