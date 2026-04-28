@@ -8,31 +8,43 @@ function generatePDF() {
 
   let y = 20;
 
-  // Title
+  // Title (centered)
   doc.setFont("Helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text(title || "Untitled Recipe", 10, y);
+  doc.setFontSize(20);
+  doc.text(title || "Untitled Recipe", 105, y, { align: "center" });
+
+  y += 15;
+
+  // Line separator
+  doc.setDrawColor(200);
+  doc.line(10, y, 200, y);
 
   y += 10;
 
   // Ingredients
-  doc.setFontSize(12);
-  doc.setFont("Helvetica", "bold");
-  doc.text("Ingredients:", 10, y);
+  doc.setFontSize(14);
+  doc.text("Ingredients", 10, y);
 
   y += 8;
+
   doc.setFont("Helvetica", "normal");
+  doc.setFontSize(11);
+
   const ingLines = doc.splitTextToSize(ingredients, 180);
   doc.text(ingLines, 10, y);
 
-  y += ingLines.length * 6 + 5;
+  y += ingLines.length * 6 + 10;
 
   // Instructions
   doc.setFont("Helvetica", "bold");
-  doc.text("Instructions:", 10, y);
+  doc.setFontSize(14);
+  doc.text("Instructions", 10, y);
 
   y += 8;
+
   doc.setFont("Helvetica", "normal");
+  doc.setFontSize(11);
+
   const instLines = doc.splitTextToSize(instructions, 180);
   doc.text(instLines, 10, y);
 
