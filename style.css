@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: #f4f4f4;
 }
 
@@ -15,7 +15,7 @@ body {
   max-width: 500px;
   background: white;
   padding: 20px;
-  border-radius: 15px;
+  border-radius: 14px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
@@ -36,39 +36,23 @@ textarea {
 }
 
 button {
-  margin-top: 10px;
   width: 100%;
+  margin-top: 10px;
   padding: 10px;
-  background: #ff7a18;
   border: none;
-  color: white;
   border-radius: 8px;
+  background: #ff7a18;
+  color: white;
+  cursor: pointer;
 }
 
 button:hover {
   background: #e56710;
 }
 
-#recipeList {
-  margin-top: 15px;
-  padding-left: 20px;
-}
-
-#recipeList button {
-  width: auto;
-  margin-left: 5px;
-  padding: 3px 6px;
-  @media (max-width: 600px) {
-  .card {
-    border-radius: 0;
-    height: 100vh;
-    max-width: 100%;
-  }
-
-  button {
-    font-size: 16px;
-    padding: 14px;
-  }
-}
-  font-size: 12px;
+.recipe {
+  background: #fafafa;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 8px;
 }
