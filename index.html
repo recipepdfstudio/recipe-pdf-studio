@@ -5,7 +5,7 @@
 
   <title>Recipe PDF Studio</title>
 
-  <!-- mobile fix -->
+  <!-- 📱 Mobile fix -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- PDF library -->
@@ -19,19 +19,29 @@
   <div class="app">
 
     <div class="card">
+
       <h1>🍲 Recipe PDF Studio</h1>
 
+      <!-- FORM -->
       <input id="title" placeholder="Recipe title">
 
       <textarea id="ingredients" placeholder="Ingredients"></textarea>
 
       <textarea id="steps" placeholder="Steps"></textarea>
 
-      <button onclick="addRecipe()">➕ Add Recipe</button>
-      <button onclick="generatePDF()">📄 Download PDF</button>
+      <button onclick="addRecipe()">Save Recipe</button>
+      <button onclick="generatePDF()">Download PDF</button>
 
+      <hr>
+
+      <!-- SEARCH -->
       <h3>My Recipes</h3>
+
+      <input id="search" placeholder="Search recipes..." oninput="render()">
+
+      <!-- LIST -->
       <div id="list"></div>
+
     </div>
 
   </div>
