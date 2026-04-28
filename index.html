@@ -2,40 +2,284 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>RecipePDFStudio</title>
+  <title>Recipe PDF Studio</title>
 
-  <link rel="stylesheet" href="style.css">
+  <!-- 📱 Mobile fix -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- jsPDF library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      background: #f6f7fb;
+      font-size: 17px;
+    }
+
+    .topbar {
+      background: #1f6f3b;
+      color: white;
+      padding: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      font-size: 15px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    textarea {
+      height: 80px;
+    }
+
+    button {
+      padding: 10px;
+      margin-top: 8px;
+      width: 100%;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .save { background: #2f9e44; color: white; }
+    .pdf { background: #1976d2; color: white; }
+
+    .recipe {
+      border: 1px solid #eee;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+
+    .title {
+      font-weight: bold;
+    }
+
+    .btns {
+      display: flex;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .btns button {
+      width: 50%;
+      font-size: 13px;
+      border-radius: 6px;
+    }
+
+    .edit { background: #1c7ed6; color: white; }
+    .delete { background: #e03131; color: white; }
+
+    .undo {
+      background: orange;
+      color: white;
+      margin-top: 10px;
+    }
+
+    /* 📱 mobile improvement */
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .card {
+        width: 95%;
+      }
+    }
+
+  </style>
 </head>
 
 <body>
 
-  <div class="app">
-    <div class="card">
+<div class="topbar">🍲 Recipe PDF Studio</div>
 
-      <h1>🍳 RecipePDFStudio</h1>
+<div class="container">
 
-      <input id="title" placeholder="Recipe Title" />
+  <!-- FORM -->
+  <div class="card">
+    <h3>Create / Edit Recipe</h3>
 
-      <textarea id="ingredients" placeholder="Ingredients (one per line)"></textarea>
+    <input id="title" placeholder="Title">
 
-      <textarea id="instructions" placeholder="Instructions"></textarea>
+    <select id="category">
+      <option>Breakfast</option>
+      <option>Lunch</option>
+      <option>Dinner</option>
+      <option>Snack</option>
+    </select>
 
-      <!-- Buttons -->
-      <button onclick="addRecipe()">➕ Add Recipe</button>
-      <button onclick="generatePDF()">📄 Download Cookbook PDF</button>
+    <textarea id="ingredients" placeholder="Ingredients"></textarea>
+    <textarea id="steps" placeholder="Steps"></textarea>
 
-      <!-- Recipe list -->
-      <ul id="recipeList"></ul>
-
-    </div>
+    <button class="save" onclick="saveRecipe()">Save Recipe</button>
+    <button class="pdf" onclick="generatePDF()">Generate PDF</button>
   </div>
 
-  <script src="script.js"></script>
+  <!-- LIST -->
+  <div class="card">
+    <h3>My Recipes</h3>
+
+    <input id="search" placeholder="Search..." oninput="renderRecipes()">
+
+    <div id="list"></div>
+
+    <button id="undoBtn" class="undo" onclick="undoDelete()" style="display:none;">
+      Undo Delete
+    </button>
+  </div>
+
+</div>
+
+<script>
+let recipes = JSON.parse(localStorage.getItem("recipes") || "[]");
+let editId = null;
+let lastDeleted = null;
+
+function saveData() {
+  localStorage.setItem("recipes", JSON.stringify(recipes));
+  renderRecipes();
+}
+
+function saveRecipe() {
+  const data = {
+    id: editId || Date.now(),
+    title: document.getElementById("title").value,
+    category: document.getElementById("category").value,
+    ingredients: document.getElementById("ingredients").value,
+    steps: document.getElementById("steps").value
+  };
+
+  if (!data.title) return alert("Add title");
+
+  if (editId) {
+    recipes = recipes.map(r => r.id === editId ? data : r);
+    editId = null;
+  } else {
+    recipes.push(data);
+  }
+
+  clearForm();
+  saveData();
+}
+
+function renderRecipes() {
+  const list = document.getElementById("list");
+  const search = document.getElementById("search").value.toLowerCase();
+
+  list.innerHTML = "";
+
+  recipes
+    .filter(r => r.title.toLowerCase().includes(search))
+    .forEach(r => {
+
+      const div = document.createElement("div");
+      div.className = "recipe";
+
+      div.innerHTML = `
+        <div class="title">${r.title}</div>
+        <div>${r.category}</div>
+
+        <div class="btns">
+          <button class="edit" onclick="editRecipe(${r.id})">Edit</button>
+          <button class="delete" onclick="deleteRecipe(${r.id})">Delete</button>
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+}
+
+function editRecipe(id) {
+  const r = recipes.find(r => r.id === id);
+
+  document.getElementById("title").value = r.title;
+  document.getElementById("category").value = r.category;
+  document.getElementById("ingredients").value = r.ingredients;
+  document.getElementById("steps").value = r.steps;
+
+  editId = id;
+}
+
+function deleteRecipe(id) {
+  lastDeleted = recipes.find(r => r.id === id);
+  recipes = recipes.filter(r => r.id !== id);
+
+  document.getElementById("undoBtn").style.display = "block";
+
+  saveData();
+}
+
+function undoDelete() {
+  if (lastDeleted) {
+    recipes.push(lastDeleted);
+    lastDeleted = null;
+    saveData();
+    document.getElementById("undoBtn").style.display = "none";
+  }
+}
+
+function clearForm() {
+  document.getElementById("title").value = "";
+  document.getElementById("ingredients").value = "";
+  document.getElementById("steps").value = "";
+}
+
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const t = document.getElementById("title").value;
+  const ing = document.getElementById("ingredients").value;
+  const st = document.getElementById("steps").value;
+
+  let y = 10;
+
+  doc.text("Recipe: " + t, 10, y);
+
+  y += 10;
+
+  doc.text("Ingredients:", 10, y);
+  y += 6;
+  doc.text(ing, 10, y);
+
+  y += 30;
+
+  doc.text("Steps:", 10, y);
+  y += 6;
+  doc.text(st, 10, y);
+
+  doc.save((t || "recipe") + ".pdf");
+}
+
+renderRecipes();
+</script>
 
 </body>
 </html>
