@@ -1,116 +1,138 @@
-let recipes = JSON.parse(localStorage.getItem("recipes")) || [];
+let recipes = JSON.parse(localStorage.getItem("recipes") || "[]");
+let editId = null;
+let lastDeleted = null;
 
 function saveData() {
   localStorage.setItem("recipes", JSON.stringify(recipes));
+  renderRecipes();
 }
 
-function addRecipe() {
-  const title = document.getElementById("title").value;
-  const ingredients = document.getElementById("ingredients").value;
-  const instructions = document.getElementById("instructions").value;
+function saveRecipe() {
+  const title = document.getElementById("title").value.trim();
+  const category = document.getElementById("category").value;
+  const ingredients = document.getElementById("ingredients").value.trim();
+  const steps = document.getElementById("steps").value.trim();
 
-  if (!title || !ingredients || !instructions) {
-    alert("Fill all fields");
+  if (!title || !ingredients || !steps) {
+    alert("Please fill all fields");
     return;
   }
 
-  recipes.push({ title, ingredients, instructions });
+  const data = {
+    id: editId || Date.now(),
+    title,
+    category,
+    ingredients,
+    steps
+  };
+
+  if (editId) {
+    recipes = recipes.map(r => r.id === editId ? data : r);
+    editId = null;
+  } else {
+    recipes.push(data);
+  }
+
+  clearForm();
   saveData();
-  updateList();
-  clearInputs();
 }
 
-function clearInputs() {
-  document.getElementById("title").value = "";
-  document.getElementById("ingredients").value = "";
-  document.getElementById("instructions").value = "";
-}
+function renderRecipes() {
+  const list = document.getElementById("list");
+  const search = document.getElementById("search").value.toLowerCase();
 
-function updateList() {
-  const list = document.getElementById("recipeList");
   list.innerHTML = "";
 
-  recipes.forEach((r, i) => {
-    const li = document.createElement("li");
+  recipes
+    .filter(r => r.title.toLowerCase().includes(search))
+    .forEach(r => {
+      const div = document.createElement("div");
+      div.className = "recipe";
 
-    li.innerHTML = `
-      <strong>${r.title}</strong>
-      <button onclick="editRecipe(${i})">✏️</button>
-      <button onclick="deleteRecipe(${i})">🗑</button>
-    `;
+      div.innerHTML = `
+        <div class="title">${r.title}</div>
+        <div>${r.category}</div>
 
-    list.appendChild(li);
-  });
+        <div class="btns">
+          <button class="edit" onclick="editRecipe(${r.id})">Edit</button>
+          <button class="delete" onclick="deleteRecipe(${r.id})">Delete</button>
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
 }
 
-function deleteRecipe(i) {
-  recipes.splice(i, 1);
-  saveData();
-  updateList();
-}
-
-function editRecipe(i) {
-  const r = recipes[i];
+function editRecipe(id) {
+  const r = recipes.find(r => r.id === id);
+  if (!r) return;
 
   document.getElementById("title").value = r.title;
+  document.getElementById("category").value = r.category;
   document.getElementById("ingredients").value = r.ingredients;
-  document.getElementById("instructions").value = r.instructions;
+  document.getElementById("steps").value = r.steps;
 
-  recipes.splice(i, 1);
+  editId = id;
+}
+
+function deleteRecipe(id) {
+  lastDeleted = recipes.find(r => r.id === id);
+  recipes = recipes.filter(r => r.id !== id);
+
+  document.getElementById("undoBtn").style.display = "block";
+
   saveData();
-  updateList();
+}
+
+function undoDelete() {
+  if (!lastDeleted) return;
+
+  recipes.push(lastDeleted);
+  lastDeleted = null;
+
+  document.getElementById("undoBtn").style.display = "none";
+
+  saveData();
+}
+
+function clearForm() {
+  document.getElementById("title").value = "";
+  document.getElementById("ingredients").value = "";
+  document.getElementById("steps").value = "";
 }
 
 function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  let y = 15;
+  let y = 10;
 
-  doc.setFontSize(18);
-  doc.setFont("Helvetica", "bold");
-  doc.text("My Recipe Cookbook", 105, y, { align: "center" });
+  doc.setFontSize(16);
+  doc.text("My Recipe Book", 10, y);
 
   y += 10;
 
   recipes.forEach((r, i) => {
-    y += 10;
+    doc.setFontSize(12);
 
-    doc.setFontSize(14);
-    doc.text(`${i + 1}. ${r.title}`, 10, y);
-
+    doc.text(`${i + 1}. ${r.title} (${r.category})`, 10, y);
     y += 6;
 
-    doc.setFontSize(11);
-    doc.setFont("Helvetica", "bold");
-    doc.text("Ingredients:", 10, y);
-
-    y += 5;
-
-    doc.setFont("Helvetica", "normal");
-    let ing = doc.splitTextToSize(r.ingredients, 180);
+    const ing = doc.splitTextToSize("Ingredients: " + r.ingredients, 180);
     doc.text(ing, 10, y);
+    y += ing.length * 5 + 4;
 
-    y += ing.length * 5 + 5;
+    const st = doc.splitTextToSize("Steps: " + r.steps, 180);
+    doc.text(st, 10, y);
+    y += st.length * 5 + 8;
 
-    doc.setFont("Helvetica", "bold");
-    doc.text("Instructions:", 10, y);
-
-    y += 5;
-
-    doc.setFont("Helvetica", "normal");
-    let ins = doc.splitTextToSize(r.instructions, 180);
-    doc.text(ins, 10, y);
-
-    y += ins.length * 5 + 10;
-
-    if (y > 260 && i !== recipes.length - 1) {
+    if (y > 270 && i !== recipes.length - 1) {
       doc.addPage();
-      y = 15;
+      y = 10;
     }
   });
 
-  doc.save("cookbook.pdf");
+  doc.save("recipes.pdf");
 }
 
-updateList();
+renderRecipes();
