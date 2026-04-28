@@ -17,7 +17,7 @@ body {
   padding: 25px;
   border-radius: 16px;
   width: 100%;
-  max-width: 420px;
+  max-width: 450px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
@@ -26,6 +26,7 @@ h1 {
   margin-top: 0;
 }
 
+/* Inputs */
 input, textarea {
   width: 100%;
   margin-top: 10px;
@@ -36,22 +37,36 @@ input, textarea {
 }
 
 textarea {
-  min-height: 100px;
+  min-height: 90px;
   resize: vertical;
 }
 
+/* Buttons */
 button {
-  margin-top: 15px;
+  margin-top: 10px;
   width: 100%;
   padding: 12px;
   border: none;
   border-radius: 10px;
   background: #ff7a18;
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
+  transition: 0.2s;
 }
 
 button:hover {
   background: #e56710;
+}
+
+/* Recipe list */
+#recipeList {
+  margin-top: 15px;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #444;
+}
+
+#recipeList li {
+  margin-bottom: 5px;
 }
